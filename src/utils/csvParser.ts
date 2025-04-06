@@ -1,0 +1,133 @@
+
+import { FarmerData, ProcessedData, BlockData } from "../types";
+import Papa from "papaparse";
+
+// Parse CSV file data
+export const parseCSV = (file: File): Promise<FarmerData[]> => {
+  return new Promise((resolve, reject) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        resolve(results.data as FarmerData[]);
+      },
+      error: (error) => {
+        reject(error);
+      },
+    });
+  });
+};
+
+// Process the raw farmer data into a more usable format
+export const processData = (farmers: FarmerData[]): ProcessedData => {
+  const blocks: Record<string, BlockData> = {};
+  const districts = new Set<string>();
+
+  // Initialize data structure
+  farmers.forEach((farmer) => {
+    const blockName = farmer["Block Name"];
+    const districtName = farmer["District Name"];
+    
+    // Add district to set
+    if (districtName) {
+      districts.add(districtName);
+    }
+    
+    // Initialize block if it doesn't exist
+    if (blockName && !blocks[blockName]) {
+      blocks[blockName] = {
+        blockName,
+        registrationStages: {
+          total: 0,
+          newRegistration: 0,
+          jointInspection: 0,
+          workOrder: 0,
+          install: 0,
+          installAndInspection: 0,
+        },
+        financialData: {
+          pmksy: {
+            totalPaid: 0,
+            cgst: 0,
+            sgst: 0,
+            tds: 0,
+          },
+          bksy: {
+            totalPaid: 0,
+            cgst: 0,
+            sgst: 0,
+            tds: 0,
+          },
+        },
+        farmers: [],
+      };
+    }
+
+    // Add farmer to block
+    if (blockName) {
+      blocks[blockName].farmers.push(farmer);
+      
+      // Count total farmers in block
+      blocks[blockName].registrationStages.total += 1;
+      
+      // Count farmers by registration stage
+      const status = farmer["Current Status"]?.toLowerCase() || "";
+      
+      if (status.includes("new registration") || status === "") {
+        blocks[blockName].registrationStages.newRegistration += 1;
+      } else if (status.includes("joint inspection") || farmer["Joint Insp. Date"]) {
+        blocks[blockName].registrationStages.jointInspection += 1;
+      } else if (status.includes("work order") || farmer["Work Order Date"]) {
+        blocks[blockName].registrationStages.workOrder += 1;
+      } else if (status.includes("install") && !farmer["Inspection Date"]) {
+        blocks[blockName].registrationStages.install += 1;
+      } else if (farmer["Installation Date"] && farmer["Inspection Date"]) {
+        blocks[blockName].registrationStages.installAndInspection += 1;
+      }
+      
+      // Process financial data
+      const pmksyAmountPaid = parseFloat(farmer["PMKSY Amount Paid"] || "0");
+      const pmksyCGST = parseFloat(farmer["PMKSY CGST"] || "0");
+      const pmksySGST = parseFloat(farmer["PMKSY SGST"] || "0");
+      const pmksyTDS = parseFloat(farmer["PMKSY TDS"] || "0");
+      
+      const bksyAmountPaid = parseFloat(farmer["BKSY Amount Paid"] || "0");
+      const bksyCGST = parseFloat(farmer["BKSY CGST"] || "0");
+      const bksySGST = parseFloat(farmer["BKSY SGST"] || "0");
+      const bksyTDS = parseFloat(farmer["BKSY TDS"] || "0");
+      
+      // Add financial data to block totals
+      blocks[blockName].financialData.pmksy.totalPaid += pmksyAmountPaid;
+      blocks[blockName].financialData.pmksy.cgst += pmksyCGST;
+      blocks[blockName].financialData.pmksy.sgst += pmksySGST;
+      blocks[blockName].financialData.pmksy.tds += pmksyTDS;
+      
+      blocks[blockName].financialData.bksy.totalPaid += bksyAmountPaid;
+      blocks[blockName].financialData.bksy.cgst += bksyCGST;
+      blocks[blockName].financialData.bksy.sgst += bksySGST;
+      blocks[blockName].financialData.bksy.tds += bksyTDS;
+    }
+  });
+
+  return {
+    blocks,
+    allFarmers: farmers,
+    districts: Array.from(districts)
+  };
+};
+
+// Export data to CSV
+export const exportToCSV = (data: FarmerData[], fileName: string = 'export.csv') => {
+  const csv = Papa.unparse(data);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', fileName);
+  link.style.visibility = 'hidden';
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
