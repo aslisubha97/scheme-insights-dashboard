@@ -17,7 +17,8 @@ import { FarmerData } from '@/types';
 const FinanceReport: React.FC = () => {
   const { processedData, selectedDistrict, filterByDistrict } = useData();
   const [selectedBlock, setSelectedBlock] = useState<string>('all');
-  const [billNumberSearch, setBillNumberSearch] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchCategory, setSearchCategory] = useState<string>('billno');
   const [searchResults, setSearchResults] = useState<FarmerData[]>([]);
   
   const blocks = useMemo(() => {
@@ -117,14 +118,27 @@ const FinanceReport: React.FC = () => {
   };
   
   const handleSearch = () => {
-    if (!processedData || !billNumberSearch.trim()) {
+    if (!processedData || !searchQuery.trim()) {
       setSearchResults([]);
       return;
     }
     
-    const results = processedData.allFarmers.filter(farmer => 
-      farmer["Bill No."]?.toLowerCase().includes(billNumberSearch.toLowerCase())
-    );
+    const query = searchQuery.toLowerCase().trim();
+    
+    const results = processedData.allFarmers.filter(farmer => {
+      switch(searchCategory) {
+        case 'billno':
+          return farmer["Bill No."]?.toLowerCase().includes(query);
+        case 'regnum':
+          return farmer["Farmer Registration Number"]?.toLowerCase().includes(query);
+        case 'aadhar':
+          return farmer["Aadhar Number"]?.toLowerCase().includes(query);
+        case 'taxinv':
+          return farmer["Tax Inv. No."]?.toLowerCase().includes(query);
+        default:
+          return farmer["Bill No."]?.toLowerCase().includes(query);
+      }
+    });
     
     setSearchResults(results);
   };
@@ -190,21 +204,41 @@ const FinanceReport: React.FC = () => {
         </div>
       </div>
       
-      {/* Bill Number Search */}
+      {/* Enhanced Search */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center text-lg">
             <Search className="mr-2 h-5 w-5" />
-            Search by Bill Number
+            Search Records
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2">
+          <div className="flex flex-col md:flex-row gap-2">
+            <Select 
+              value={searchCategory} 
+              onValueChange={setSearchCategory}
+            >
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Search by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="billno">Bill Number</SelectItem>
+                <SelectItem value="regnum">Registration Number</SelectItem>
+                <SelectItem value="aadhar">Aadhar Number</SelectItem>
+                <SelectItem value="taxinv">Tax Invoice Number</SelectItem>
+              </SelectContent>
+            </Select>
+            
             <Input 
-              placeholder="Enter Bill Number..." 
-              value={billNumberSearch}
-              onChange={(e) => setBillNumberSearch(e.target.value)}
-              className="max-w-md"
+              placeholder={`Enter ${
+                searchCategory === 'billno' ? 'Bill Number' : 
+                searchCategory === 'regnum' ? 'Registration Number' : 
+                searchCategory === 'aadhar' ? 'Aadhar Number' : 
+                'Tax Invoice Number'
+              }...`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1"
             />
             <Button onClick={handleSearch}>Search</Button>
           </div>
@@ -215,8 +249,17 @@ const FinanceReport: React.FC = () => {
                 <Card key={index} className="p-4 bg-gray-50">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <h3 className="font-medium">Bill Details</h3>
+                      <h3 className="font-medium">Farmer & Bill Details</h3>
                       <div className="grid grid-cols-2 gap-1 text-sm">
+                        <span className="text-gray-600">Farmer Name:</span>
+                        <span className="font-medium">{farmer["Name of Beneficiary"] || "N/A"}</span>
+                        
+                        <span className="text-gray-600">Registration No:</span>
+                        <span className="font-medium">{farmer["Farmer Registration Number"] || "N/A"}</span>
+                        
+                        <span className="text-gray-600">Aadhar No:</span>
+                        <span>{farmer["Aadhar Number"] || "N/A"}</span>
+                        
                         <span className="text-gray-600">Bill Number:</span>
                         <span className="font-medium">{farmer["Bill No."] || "N/A"}</span>
                         
@@ -227,21 +270,24 @@ const FinanceReport: React.FC = () => {
                         <span>{farmer["Approved on"] || "N/A"}</span>
                         
                         <span className="text-gray-600">Tax Invoice No:</span>
-                        <span>{farmer["Tax Inv. No"] || "N/A"}</span>
+                        <span>{farmer["Tax Inv. No."] || "N/A"}</span>
                       </div>
                     </div>
                     
                     <div className="space-y-2">
-                      <h3 className="font-medium">Farmer Details</h3>
+                      <h3 className="font-medium">Location Details</h3>
                       <div className="grid grid-cols-2 gap-1 text-sm">
-                        <span className="text-gray-600">Name:</span>
-                        <span className="font-medium">{farmer["Name of Beneficiary"] || "N/A"}</span>
+                        <span className="text-gray-600">District:</span>
+                        <span>{farmer["District Name"] || "N/A"}</span>
                         
                         <span className="text-gray-600">Block:</span>
                         <span>{farmer["Block Name"] || "N/A"}</span>
                         
                         <span className="text-gray-600">Gram Panchayat:</span>
                         <span>{farmer["Gram Panchayet"] || "N/A"}</span>
+                        
+                        <span className="text-gray-600">Mouza:</span>
+                        <span>{farmer["Mouza Name"] || "N/A"}</span>
                       </div>
                     </div>
                   </div>
@@ -314,8 +360,8 @@ const FinanceReport: React.FC = () => {
                 </Card>
               ))}
             </div>
-          ) : billNumberSearch ? (
-            <p className="mt-4 text-center text-gray-500">No results found for bill number "{billNumberSearch}"</p>
+          ) : searchQuery ? (
+            <p className="mt-4 text-center text-gray-500">No results found for your search query.</p>
           ) : null}
         </CardContent>
       </Card>

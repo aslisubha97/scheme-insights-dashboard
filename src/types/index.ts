@@ -106,6 +106,8 @@ export interface BlockData {
       sgst: number;
       tds: number;
     };
+    gstDue: number;
+    gstSubmitted: number;
   };
   farmers: FarmerData[];
 }
@@ -115,4 +117,6 @@ export interface ProcessedData {
   blocks: Record<string, BlockData>;
   allFarmers: FarmerData[];
   districts: string[];
+  gstDueTotal?: number;
+  gstSubmittedTotal?: number;
 }

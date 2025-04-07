@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import BlockDetailPage from "./pages/BlockDetailPage";
 import { AuthProvider } from "./context/AuthContext";
 
+// Create a new query client instance
 const queryClient = new QueryClient();
 
 const App = () => (

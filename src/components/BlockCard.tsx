@@ -11,6 +11,7 @@ import {
 import { BlockData } from '@/types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Progress } from '@/components/ui/progress';
 
 interface BlockCardProps {
   blockData: BlockData;
@@ -21,18 +22,22 @@ const BlockCard: React.FC<BlockCardProps> = ({ blockData, onClick }) => {
   const isMobile = useIsMobile();
   const { blockName, registrationStages } = blockData;
   
-  // Prepare data for chart
+  // Prepare data for chart with correct colors as specified
   const chartData = [
-    { name: 'New Registration', value: registrationStages.newRegistration, color: '#3b82f6' },
-    { name: 'Joint Inspection', value: registrationStages.jointInspection, color: '#10b981' },
-    { name: 'Work Order', value: registrationStages.workOrder, color: '#f59e0b' },
-    { name: 'Install', value: registrationStages.install, color: '#8b5cf6' },
-    { name: 'Install & Inspection', value: registrationStages.installAndInspection, color: '#14b8a6' },
+    { name: 'New Registration', value: registrationStages.newRegistration, color: '#FFFF33' },
+    { name: 'Joint Inspection', value: registrationStages.jointInspection, color: '#336633' },
+    { name: 'Work Order', value: registrationStages.workOrder, color: '#66FFFF' },
+    { name: 'Install', value: registrationStages.install, color: '#1E6AF4' },
+    { name: 'Install & Inspection', value: registrationStages.installAndInspection, color: '#CC00CB' },
   ].filter(item => item.value > 0);
   
-  // Calculate completion rate
+  // Calculate completion rate based on the progression through stages
   const completionRate = registrationStages.total > 0
-    ? ((registrationStages.installAndInspection / registrationStages.total) * 100).toFixed(1)
+    ? (((registrationStages.jointInspection * 0.25) + 
+        (registrationStages.workOrder * 0.5) + 
+        (registrationStages.install * 0.75) + 
+        (registrationStages.installAndInspection)) / 
+       registrationStages.total * 100).toFixed(1)
     : '0.0';
     
   return (
@@ -74,7 +79,7 @@ const BlockCard: React.FC<BlockCardProps> = ({ blockData, onClick }) => {
             </div>
           </div>
           
-          <div className="h-[120px]">
+          <div className="h-[140px]">
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -82,10 +87,12 @@ const BlockCard: React.FC<BlockCardProps> = ({ blockData, onClick }) => {
                     data={chartData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={isMobile ? 25 : 30}
-                    outerRadius={isMobile ? 40 : 45}
-                    paddingAngle={2}
+                    innerRadius={isMobile ? 30 : 35}
+                    outerRadius={isMobile ? 45 : 55}
+                    paddingAngle={3}
                     dataKey="value"
+                    stroke="#ffffff"
+                    strokeWidth={2}
                   >
                     {chartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -100,7 +107,7 @@ const BlockCard: React.FC<BlockCardProps> = ({ blockData, onClick }) => {
                       layout="vertical" 
                       align="right"
                       verticalAlign="middle"
-                      iconSize={8}
+                      iconSize={10}
                       iconType="circle"
                       wrapperStyle={{ fontSize: '10px', paddingLeft: '10px' }}
                     />
@@ -115,10 +122,13 @@ const BlockCard: React.FC<BlockCardProps> = ({ blockData, onClick }) => {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="border-t bg-gray-50 py-2 px-4">
-        <div className="w-full flex justify-between items-center">
-          <span className="text-xs text-gray-500">Completion Rate</span>
-          <span className="text-xs font-semibold">{completionRate}%</span>
+      <CardFooter className="border-t bg-gray-50 py-3 px-4">
+        <div className="w-full space-y-1">
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-gray-500">Completion Rate</span>
+            <span className="text-xs font-semibold">{completionRate}%</span>
+          </div>
+          <Progress value={parseFloat(completionRate)} className="h-2" />
         </div>
       </CardFooter>
     </Card>

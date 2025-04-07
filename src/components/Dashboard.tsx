@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Search, BarChart3 } from 'lucide-react';
+import { Search, BarChart3, ReceiptIndianRupee } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const CHART_COLORS = {
@@ -48,11 +48,18 @@ const Dashboard: React.FC = () => {
       } else if (sortBy === 'total') {
         return b.registrationStages.total - a.registrationStages.total;
       } else if (sortBy === 'completion') {
+        // Calculate weighted completion based on progression through stages
         const completionA = a.registrationStages.total > 0 
-          ? (a.registrationStages.installAndInspection / a.registrationStages.total)
+          ? ((a.registrationStages.jointInspection * 0.25) + 
+             (a.registrationStages.workOrder * 0.5) + 
+             (a.registrationStages.install * 0.75) + 
+             a.registrationStages.installAndInspection) / a.registrationStages.total
           : 0;
         const completionB = b.registrationStages.total > 0 
-          ? (b.registrationStages.installAndInspection / b.registrationStages.total)
+          ? ((b.registrationStages.jointInspection * 0.25) + 
+             (b.registrationStages.workOrder * 0.5) + 
+             (b.registrationStages.install * 0.75) + 
+             b.registrationStages.installAndInspection) / b.registrationStages.total
           : 0;
         return completionB - completionA;
       }
@@ -73,6 +80,15 @@ const Dashboard: React.FC = () => {
       'Install & Inspection': block.registrationStages.installAndInspection,
     }));
   }, [filteredBlocks]);
+  
+  // Format currency helper
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
 
   return (
     <div className="space-y-6">
@@ -122,6 +138,43 @@ const Dashboard: React.FC = () => {
 
       {processedData && filteredBlocks.length > 0 ? (
         <>
+          {/* GST Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <Card className="border-amber-200">
+              <CardHeader className="pb-2 bg-amber-50">
+                <CardTitle className="text-base flex items-center text-amber-700">
+                  <ReceiptIndianRupee className="mr-2 h-5 w-5" />
+                  GST Due
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-amber-600">
+                  {formatCurrency(processedData.gstDueTotal || 0)}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Total GST amount where Tax Invoice is not yet submitted
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-green-200">
+              <CardHeader className="pb-2 bg-green-50">
+                <CardTitle className="text-base flex items-center text-green-700">
+                  <ReceiptIndianRupee className="mr-2 h-5 w-5" />
+                  GST Submitted
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  {formatCurrency(processedData.gstSubmittedTotal || 0)}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Total GST amount with submitted Tax Invoices
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        
           <Card className="overflow-hidden">
             <CardHeader className="bg-scheme-light pb-2">
               <CardTitle className="text-lg flex items-center">

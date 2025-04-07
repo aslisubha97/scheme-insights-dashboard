@@ -40,10 +40,31 @@ export const parseCSV = (file: File): Promise<FarmerData[]> => {
   });
 };
 
+// Helper function to determine registration stage
+const determineRegistrationStage = (farmer: FarmerData): string => {
+  const status = farmer["Current Status"]?.toLowerCase() || "";
+  
+  if (status.includes("inspection") && farmer["Installation Date"] && farmer["Inspection Date"]) {
+    return "installAndInspection";
+  } else if (status.includes("install") || farmer["Installation Date"]) {
+    return "install";
+  } else if (status.includes("work order") || farmer["Work Order Date"]) {
+    return "workOrder";
+  } else if (status.includes("joint inspection") || farmer["Joint Insp. Date"]) {
+    return "jointInspection";
+  } else {
+    return "newRegistration";
+  }
+};
+
 // Process the raw farmer data into a more usable format
 export const processData = (farmers: FarmerData[]): ProcessedData => {
   const blocks: Record<string, BlockData> = {};
   const districts = new Set<string>();
+  
+  // Initialize GST tracking
+  let gstDueTotal = 0;
+  let gstSubmittedTotal = 0;
 
   // Initialize data structure
   farmers.forEach((farmer) => {
@@ -80,6 +101,8 @@ export const processData = (farmers: FarmerData[]): ProcessedData => {
             sgst: 0,
             tds: 0,
           },
+          gstDue: 0,
+          gstSubmitted: 0,
         },
         farmers: [],
       };
@@ -92,19 +115,24 @@ export const processData = (farmers: FarmerData[]): ProcessedData => {
       // Count total farmers in block
       blocks[blockName].registrationStages.total += 1;
       
-      // Count farmers by registration stage
-      const status = farmer["Current Status"]?.toLowerCase() || "";
+      // Determine stage and increment appropriate counter
+      const stage = determineRegistrationStage(farmer);
+      blocks[blockName].registrationStages[stage] += 1;
       
-      if (status.includes("new registration") || status === "") {
-        blocks[blockName].registrationStages.newRegistration += 1;
-      } else if (status.includes("joint inspection") || farmer["Joint Insp. Date"]) {
-        blocks[blockName].registrationStages.jointInspection += 1;
-      } else if (status.includes("work order") || farmer["Work Order Date"]) {
-        blocks[blockName].registrationStages.workOrder += 1;
-      } else if (status.includes("install") && !farmer["Inspection Date"]) {
-        blocks[blockName].registrationStages.install += 1;
-      } else if (farmer["Installation Date"] && farmer["Inspection Date"]) {
-        blocks[blockName].registrationStages.installAndInspection += 1;
+      // Process GST data - only for work order, install, and install & inspection stages
+      if (["workOrder", "install", "installAndInspection"].includes(stage)) {
+        const gstAmount = parseFloat(farmer["GST Amount"] || "0");
+        const gstAdditional = parseFloat(farmer["GST Amount (Addl. Item)"] || "0");
+        const totalGST = gstAmount + gstAdditional;
+        
+        // Check if Tax Invoice Number exists
+        if (farmer["Tax Inv. No."]?.trim()) {
+          blocks[blockName].financialData.gstSubmitted += totalGST;
+          gstSubmittedTotal += totalGST;
+        } else {
+          blocks[blockName].financialData.gstDue += totalGST;
+          gstDueTotal += totalGST;
+        }
       }
       
       // Process financial data
@@ -136,7 +164,9 @@ export const processData = (farmers: FarmerData[]): ProcessedData => {
     localStorage.setItem('pmksy_bksy_data', JSON.stringify({
       blocks,
       allFarmers: farmers,
-      districts: Array.from(districts)
+      districts: Array.from(districts),
+      gstDueTotal,
+      gstSubmittedTotal
     }));
   } catch (error) {
     console.error('Error saving data to localStorage:', error);
@@ -146,7 +176,9 @@ export const processData = (farmers: FarmerData[]): ProcessedData => {
   return {
     blocks,
     allFarmers: farmers,
-    districts: Array.from(districts)
+    districts: Array.from(districts),
+    gstDueTotal,
+    gstSubmittedTotal
   };
 };
 
