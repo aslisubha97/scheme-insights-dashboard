@@ -44,13 +44,27 @@ export const parseCSV = (file: File): Promise<FarmerData[]> => {
 const determineRegistrationStage = (farmer: FarmerData): string => {
   const status = farmer["Current Status"]?.toLowerCase() || "";
   
-  if (status.includes("inspection") && farmer["Installation Date"] && farmer["Inspection Date"]) {
+  // First check the Current Status field for more accurate stage determination
+  if (status.includes("install") && status.includes("inspect")) {
     return "installAndInspection";
-  } else if (status.includes("install") || farmer["Installation Date"]) {
+  } else if (status.includes("install")) {
     return "install";
-  } else if (status.includes("work order") || farmer["Work Order Date"]) {
+  } else if (status.includes("work order")) {
     return "workOrder";
-  } else if (status.includes("joint inspection") || farmer["Joint Insp. Date"]) {
+  } else if (status.includes("joint inspection")) {
+    return "jointInspection";
+  } else if (status.includes("new registration") || status.includes("registration")) {
+    return "newRegistration";
+  }
+  
+  // If Current Status doesn't give clear indication, fall back to date fields
+  if (farmer["Installation Date"] && farmer["Inspection Date"]) {
+    return "installAndInspection";
+  } else if (farmer["Installation Date"]) {
+    return "install";
+  } else if (farmer["Work Order Date"]) {
+    return "workOrder";
+  } else if (farmer["Joint Insp. Date"]) {
     return "jointInspection";
   } else {
     return "newRegistration";
@@ -62,8 +76,7 @@ export const processData = (farmers: FarmerData[]): ProcessedData => {
   const blocks: Record<string, BlockData> = {};
   const districts = new Set<string>();
   
-  // Initialize GST tracking
-  let gstDueTotal = 0;
+  // Initialize GST tracking - only using gstSubmittedTotal now
   let gstSubmittedTotal = 0;
 
   // Initialize data structure
@@ -119,20 +132,15 @@ export const processData = (farmers: FarmerData[]): ProcessedData => {
       const stage = determineRegistrationStage(farmer);
       blocks[blockName].registrationStages[stage] += 1;
       
-      // Process GST data - only for work order, install, and install & inspection stages
+      // Process GST data - collect all GST amounts, regardless of Tax Invoice status
       if (["workOrder", "install", "installAndInspection"].includes(stage)) {
         const gstAmount = parseFloat(farmer["GST Amount"] || "0");
         const gstAdditional = parseFloat(farmer["GST Amount (Addl. Item)"] || "0");
         const totalGST = gstAmount + gstAdditional;
         
-        // Check if Tax Invoice Number exists
-        if (farmer["Tax Inv. No."]?.trim()) {
-          blocks[blockName].financialData.gstSubmitted += totalGST;
-          gstSubmittedTotal += totalGST;
-        } else {
-          blocks[blockName].financialData.gstDue += totalGST;
-          gstDueTotal += totalGST;
-        }
+        // All GST amounts are now considered "submitted"
+        blocks[blockName].financialData.gstSubmitted += totalGST;
+        gstSubmittedTotal += totalGST;
       }
       
       // Process financial data
@@ -165,7 +173,6 @@ export const processData = (farmers: FarmerData[]): ProcessedData => {
       blocks,
       allFarmers: farmers,
       districts: Array.from(districts),
-      gstDueTotal,
       gstSubmittedTotal
     }));
   } catch (error) {
@@ -177,7 +184,6 @@ export const processData = (farmers: FarmerData[]): ProcessedData => {
     blocks,
     allFarmers: farmers,
     districts: Array.from(districts),
-    gstDueTotal,
     gstSubmittedTotal
   };
 };

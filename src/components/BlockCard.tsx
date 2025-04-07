@@ -22,7 +22,7 @@ const BlockCard: React.FC<BlockCardProps> = ({ blockData, onClick }) => {
   const isMobile = useIsMobile();
   const { blockName, registrationStages } = blockData;
   
-  // Prepare data for chart with correct colors as specified
+  // Define the chart data with consistent colors and names
   const chartData = [
     { name: 'New Registration', value: registrationStages.newRegistration, color: '#FFFF33' },
     { name: 'Joint Inspection', value: registrationStages.jointInspection, color: '#336633' },
@@ -91,6 +91,7 @@ const BlockCard: React.FC<BlockCardProps> = ({ blockData, onClick }) => {
                     outerRadius={isMobile ? 45 : 55}
                     paddingAngle={3}
                     dataKey="value"
+                    nameKey="name"
                     stroke="#ffffff"
                     strokeWidth={2}
                   >
@@ -99,7 +100,7 @@ const BlockCard: React.FC<BlockCardProps> = ({ blockData, onClick }) => {
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value: number) => [`${value} farmers`, '']}
+                    formatter={(value: number, name: string) => [`${value} farmers`, name]}
                     contentStyle={{ borderRadius: '4px', fontSize: '12px' }}
                   />
                   {!isMobile && (

@@ -138,42 +138,23 @@ const Dashboard: React.FC = () => {
 
       {processedData && filteredBlocks.length > 0 ? (
         <>
-          {/* GST Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <Card className="border-amber-200">
-              <CardHeader className="pb-2 bg-amber-50">
-                <CardTitle className="text-base flex items-center text-amber-700">
-                  <ReceiptIndianRupee className="mr-2 h-5 w-5" />
-                  GST Due
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-amber-600">
-                  {formatCurrency(processedData.gstDueTotal || 0)}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Total GST amount where Tax Invoice is not yet submitted
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-green-200">
-              <CardHeader className="pb-2 bg-green-50">
-                <CardTitle className="text-base flex items-center text-green-700">
-                  <ReceiptIndianRupee className="mr-2 h-5 w-5" />
-                  GST Submitted
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">
-                  {formatCurrency(processedData.gstSubmittedTotal || 0)}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Total GST amount with submitted Tax Invoices
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+          {/* GST Summary Card */}
+          <Card className="border-green-200">
+            <CardHeader className="pb-2 bg-green-50">
+              <CardTitle className="text-base flex items-center text-green-700">
+                <ReceiptIndianRupee className="mr-2 h-5 w-5" />
+                GST Amount
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {formatCurrency(processedData.gstSubmittedTotal || 0)}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Total GST amount across all eligible registrations
+              </p>
+            </CardContent>
+          </Card>
         
           <Card className="overflow-hidden">
             <CardHeader className="bg-scheme-light pb-2">

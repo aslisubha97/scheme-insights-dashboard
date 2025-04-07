@@ -117,6 +117,5 @@ export interface ProcessedData {
   blocks: Record<string, BlockData>;
   allFarmers: FarmerData[];
   districts: string[];
-  gstDueTotal?: number;
   gstSubmittedTotal?: number;
 }
