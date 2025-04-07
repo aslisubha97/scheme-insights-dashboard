@@ -1,20 +1,42 @@
 
 import { FarmerData, ProcessedData, BlockData } from "../types";
 import Papa from "papaparse";
+import * as XLSX from "xlsx";
+import { toast } from "sonner";
 
 // Parse CSV file data
 export const parseCSV = (file: File): Promise<FarmerData[]> => {
   return new Promise((resolve, reject) => {
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        resolve(results.data as FarmerData[]);
-      },
-      error: (error) => {
-        reject(error);
-      },
-    });
+    if (file.name.endsWith('.xlsx')) {
+      // Handle XLSX files
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = e.target?.result;
+          const workbook = XLSX.read(data, { type: 'binary' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+          resolve(jsonData as FarmerData[]);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = (error) => reject(error);
+      reader.readAsBinaryString(file);
+    } else {
+      // Handle CSV files
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          resolve(results.data as FarmerData[]);
+        },
+        error: (error) => {
+          reject(error);
+        },
+      });
+    }
   });
 };
 
@@ -109,6 +131,18 @@ export const processData = (farmers: FarmerData[]): ProcessedData => {
     }
   });
 
+  // Save to localStorage for persistence
+  try {
+    localStorage.setItem('pmksy_bksy_data', JSON.stringify({
+      blocks,
+      allFarmers: farmers,
+      districts: Array.from(districts)
+    }));
+  } catch (error) {
+    console.error('Error saving data to localStorage:', error);
+    toast.error('Failed to save data locally. Data might not persist after page refresh.');
+  }
+
   return {
     blocks,
     allFarmers: farmers,
@@ -130,4 +164,15 @@ export const exportToCSV = (data: FarmerData[], fileName: string = 'export.csv')
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+};
+
+// Function to load data from localStorage
+export const loadSavedData = (): ProcessedData | null => {
+  try {
+    const savedData = localStorage.getItem('pmksy_bksy_data');
+    return savedData ? JSON.parse(savedData) : null;
+  } catch (error) {
+    console.error('Error loading saved data:', error);
+    return null;
+  }
 };

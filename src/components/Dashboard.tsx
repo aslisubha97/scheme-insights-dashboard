@@ -6,8 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { BlockData } from '@/types';
 import { Search, BarChart3 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+const CHART_COLORS = {
+  newRegistration: "#FFFF33",
+  jointInspection: "#336633",
+  workOrder: "#66FFFF",
+  install: "#1E6AF4",
+  installAndInspection: "#CC00CB"
+};
 
 const Dashboard: React.FC = () => {
   const { processedData, selectedDistrict, filterByDistrict } = useData();
@@ -69,7 +77,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h2 className="text-2xl font-bold">Block-wise Dashboard</h2>
+        <h2 className="text-2xl font-bold">Block Wise Data</h2>
         
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative">
@@ -142,11 +150,11 @@ const Dashboard: React.FC = () => {
                       contentStyle={{ fontSize: '12px' }}
                     />
                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '15px' }} />
-                    <Bar dataKey="New Registration" stackId="a" fill="#3b82f6" />
-                    <Bar dataKey="Joint Inspection" stackId="a" fill="#10b981" />
-                    <Bar dataKey="Work Order" stackId="a" fill="#f59e0b" />
-                    <Bar dataKey="Install" stackId="a" fill="#8b5cf6" />
-                    <Bar dataKey="Install & Inspection" stackId="a" fill="#14b8a6" />
+                    <Bar dataKey="New Registration" stackId="a" fill={CHART_COLORS.newRegistration} />
+                    <Bar dataKey="Joint Inspection" stackId="a" fill={CHART_COLORS.jointInspection} />
+                    <Bar dataKey="Work Order" stackId="a" fill={CHART_COLORS.workOrder} />
+                    <Bar dataKey="Install" stackId="a" fill={CHART_COLORS.install} />
+                    <Bar dataKey="Install & Inspection" stackId="a" fill={CHART_COLORS.installAndInspection} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -155,7 +163,13 @@ const Dashboard: React.FC = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredBlocks.map((block) => (
-              <BlockCard key={block.blockName} blockData={block} />
+              <Link 
+                to={`/block/${encodeURIComponent(block.blockName)}`} 
+                key={block.blockName}
+                className="hover:no-underline"
+              >
+                <BlockCard key={block.blockName} blockData={block} />
+              </Link>
             ))}
           </div>
           

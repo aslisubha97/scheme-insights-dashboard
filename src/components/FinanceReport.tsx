@@ -4,17 +4,21 @@ import { useData } from '@/context/DataContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 import { 
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
 import { Button } from '@/components/ui/button';
-import { Download, TrendingUp, PieChart as PieChartIcon, BarChart3 } from 'lucide-react';
+import { Download, TrendingUp, PieChart as PieChartIcon, BarChart3, Search } from 'lucide-react';
 import { exportToCSV } from '@/utils/csvParser';
+import { FarmerData } from '@/types';
 
 const FinanceReport: React.FC = () => {
   const { processedData, selectedDistrict, filterByDistrict } = useData();
   const [selectedBlock, setSelectedBlock] = useState<string>('all');
+  const [billNumberSearch, setBillNumberSearch] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<FarmerData[]>([]);
   
   const blocks = useMemo(() => {
     if (!processedData) return [];
@@ -111,6 +115,19 @@ const FinanceReport: React.FC = () => {
     
     exportToCSV(dataToExport, `finance-report-${new Date().toISOString().slice(0, 10)}.csv`);
   };
+  
+  const handleSearch = () => {
+    if (!processedData || !billNumberSearch.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    
+    const results = processedData.allFarmers.filter(farmer => 
+      farmer["Bill No."]?.toLowerCase().includes(billNumberSearch.toLowerCase())
+    );
+    
+    setSearchResults(results);
+  };
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -172,6 +189,136 @@ const FinanceReport: React.FC = () => {
           </Button>
         </div>
       </div>
+      
+      {/* Bill Number Search */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center text-lg">
+            <Search className="mr-2 h-5 w-5" />
+            Search by Bill Number
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <Input 
+              placeholder="Enter Bill Number..." 
+              value={billNumberSearch}
+              onChange={(e) => setBillNumberSearch(e.target.value)}
+              className="max-w-md"
+            />
+            <Button onClick={handleSearch}>Search</Button>
+          </div>
+          
+          {searchResults.length > 0 ? (
+            <div className="mt-4 space-y-4">
+              {searchResults.map((farmer, index) => (
+                <Card key={index} className="p-4 bg-gray-50">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <h3 className="font-medium">Bill Details</h3>
+                      <div className="grid grid-cols-2 gap-1 text-sm">
+                        <span className="text-gray-600">Bill Number:</span>
+                        <span className="font-medium">{farmer["Bill No."] || "N/A"}</span>
+                        
+                        <span className="text-gray-600">Bill Date:</span>
+                        <span>{farmer["Bill Date"] || "N/A"}</span>
+                        
+                        <span className="text-gray-600">Approved On:</span>
+                        <span>{farmer["Approved on"] || "N/A"}</span>
+                        
+                        <span className="text-gray-600">Tax Invoice No:</span>
+                        <span>{farmer["Tax Inv. No"] || "N/A"}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h3 className="font-medium">Farmer Details</h3>
+                      <div className="grid grid-cols-2 gap-1 text-sm">
+                        <span className="text-gray-600">Name:</span>
+                        <span className="font-medium">{farmer["Name of Beneficiary"] || "N/A"}</span>
+                        
+                        <span className="text-gray-600">Block:</span>
+                        <span>{farmer["Block Name"] || "N/A"}</span>
+                        
+                        <span className="text-gray-600">Gram Panchayat:</span>
+                        <span>{farmer["Gram Panchayet"] || "N/A"}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* PMKSY Section */}
+                    <div className="border p-3 rounded-md bg-blue-50">
+                      <h4 className="font-medium text-blue-800 mb-2">PMKSY Details</h4>
+                      <div className="grid grid-cols-2 gap-1 text-sm">
+                        <span className="text-gray-600">Amount Paid:</span>
+                        <span className="font-medium">
+                          {farmer["PMKSY Amount Paid"] ? "₹" + farmer["PMKSY Amount Paid"] : "N/A"}
+                        </span>
+                        
+                        <span className="text-gray-600">CGST:</span>
+                        <span>{farmer["PMKSY CGST"] ? "₹" + farmer["PMKSY CGST"] : "N/A"}</span>
+                        
+                        <span className="text-gray-600">SGST:</span>
+                        <span>{farmer["PMKSY SGST"] ? "₹" + farmer["PMKSY SGST"] : "N/A"}</span>
+                        
+                        <span className="text-gray-600">TDS:</span>
+                        <span>{farmer["PMKSY TDS"] ? "₹" + farmer["PMKSY TDS"] : "N/A"}</span>
+                        
+                        <span className="text-gray-600">Released On:</span>
+                        <span>{farmer["PMKSY Released On"] || "N/A"}</span>
+                        
+                        <span className="text-gray-600">Transaction Ref:</span>
+                        <span>{farmer["PMKSY Transaction Ref."] || "N/A"}</span>
+                        
+                        <span className="text-gray-600">Transaction Date:</span>
+                        <span>{farmer["PMKSY Transaction Date"] || "N/A"}</span>
+                        
+                        <span className="text-gray-600">Paid By:</span>
+                        <span>{farmer["PMKSY Paid By"] || "N/A"}</span>
+                      </div>
+                    </div>
+                    
+                    {/* BKSY Section */}
+                    <div className="border p-3 rounded-md bg-green-50">
+                      <h4 className="font-medium text-green-800 mb-2">BKSY Details</h4>
+                      <div className="grid grid-cols-2 gap-1 text-sm">
+                        <span className="text-gray-600">Amount Paid:</span>
+                        <span className="font-medium">
+                          {farmer["BKSY Amount Paid"] ? "₹" + farmer["BKSY Amount Paid"] : "N/A"}
+                        </span>
+                        
+                        <span className="text-gray-600">CGST:</span>
+                        <span>{farmer["BKSY CGST"] ? "₹" + farmer["BKSY CGST"] : "N/A"}</span>
+                        
+                        <span className="text-gray-600">SGST:</span>
+                        <span>{farmer["BKSY SGST"] ? "₹" + farmer["BKSY SGST"] : "N/A"}</span>
+                        
+                        <span className="text-gray-600">TDS:</span>
+                        <span>{farmer["BKSY TDS"] ? "₹" + farmer["BKSY TDS"] : "N/A"}</span>
+                        
+                        <span className="text-gray-600">Released On:</span>
+                        <span>{farmer["BKSY Released On"] || "N/A"}</span>
+                        
+                        <span className="text-gray-600">Transaction Ref:</span>
+                        <span>{farmer["BKSY Transaction Ref."] || "N/A"}</span>
+                        
+                        <span className="text-gray-600">Transaction Date:</span>
+                        <span>{farmer["BKSY Transaction Date"] || "N/A"}</span>
+                        
+                        <span className="text-gray-600">Paid By:</span>
+                        <span>{farmer["BKSY Paid By"] || "N/A"}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : billNumberSearch ? (
+            <p className="mt-4 text-center text-gray-500">No results found for bill number "{billNumberSearch}"</p>
+          ) : null}
+        </CardContent>
+      </Card>
       
       {processedData && financialData ? (
         <>

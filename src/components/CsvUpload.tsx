@@ -6,22 +6,41 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Upload, FileX2, FileCheck2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const CsvUpload: React.FC = () => {
   const { uploadCSV, loading } = useData();
   const [file, setFile] = useState<File | null>(null);
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect non-authenticated users
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      toast.error('Login required to access upload functionality');
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
     
     if (selectedFile) {
-      if (selectedFile.type !== 'text/csv' && !selectedFile.name.endsWith('.csv')) {
-        toast.error('Please upload a valid CSV file');
-        return;
-      }
+      const fileType = selectedFile.type;
+      const fileExt = selectedFile.name.split('.').pop()?.toLowerCase();
       
-      setFile(selectedFile);
-      toast.info(`File "${selectedFile.name}" selected`);
+      if (
+        fileType === 'text/csv' || 
+        fileExt === 'csv' || 
+        fileType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+        fileExt === 'xlsx'
+      ) {
+        setFile(selectedFile);
+        toast.info(`File "${selectedFile.name}" selected`);
+      } else {
+        toast.error('Please upload a valid CSV or XLSX file');
+      }
     }
   }, []);
 
@@ -29,6 +48,7 @@ const CsvUpload: React.FC = () => {
     onDrop,
     accept: {
       'text/csv': ['.csv'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
     },
     multiple: false,
   });
@@ -47,12 +67,16 @@ const CsvUpload: React.FC = () => {
     }
   };
 
+  if (!isAuthenticated) {
+    return null; // Don't render if not authenticated
+  }
+
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>Upload Scheme Data</CardTitle>
         <CardDescription>
-          Upload a CSV file containing PMKSY and BKSY scheme data
+          Upload a CSV or XLSX file containing PMKSY and BKSY scheme data
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -79,14 +103,14 @@ const CsvUpload: React.FC = () => {
           ) : isDragActive ? (
             <div className="flex flex-col items-center">
               <Upload className="h-10 w-10 text-primary mb-2" />
-              <p className="font-medium">Drop the CSV file here</p>
+              <p className="font-medium">Drop the file here</p>
             </div>
           ) : (
             <div className="flex flex-col items-center">
               <Upload className="h-10 w-10 text-gray-400 mb-2" />
-              <p className="font-medium">Drag & drop a CSV file here, or click to select</p>
+              <p className="font-medium">Drag & drop a CSV or XLSX file here, or click to select</p>
               <p className="text-sm text-gray-500 mt-2">
-                Only CSV files are supported
+                Only CSV and XLSX files are supported
               </p>
             </div>
           )}
@@ -116,7 +140,7 @@ const CsvUpload: React.FC = () => {
           disabled={!file || loading}
           className="bg-scheme-pmksy hover:bg-scheme-pmksy/90"
         >
-          {loading ? 'Processing...' : 'Upload & Process CSV'}
+          {loading ? 'Processing...' : 'Upload & Process File'}
         </Button>
       </CardFooter>
     </Card>

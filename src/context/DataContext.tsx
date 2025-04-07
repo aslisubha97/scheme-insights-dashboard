@@ -1,107 +1,68 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { FarmerData, ProcessedData } from '../types';
-import { parseCSV, processData } from '../utils/csvParser';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { parseCSV, processData, loadSavedData } from '@/utils/csvParser';
+import { FarmerData, ProcessedData } from '@/types';
 import { toast } from 'sonner';
 
 interface DataContextType {
-  rawData: FarmerData[];
   processedData: ProcessedData | null;
+  isLoading: boolean;
+  uploadCSV: (file: File) => Promise<void>;
   loading: boolean;
   selectedDistrict: string;
-  uploadCSV: (file: File) => Promise<void>;
-  exportData: (fileName?: string) => void;
   filterByDistrict: (district: string) => void;
 }
 
-const initialProcessedData: ProcessedData = {
-  blocks: {},
-  allFarmers: [],
-  districts: []
-};
-
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-export const DataProvider = ({ children }: { children: ReactNode }) => {
-  const [rawData, setRawData] = useState<FarmerData[]>([]);
+export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [processedData, setProcessedData] = useState<ProcessedData | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
   const [selectedDistrict, setSelectedDistrict] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Upload and process CSV file
+  useEffect(() => {
+    // Try to load saved data on component mount
+    const savedData = loadSavedData();
+    if (savedData) {
+      setProcessedData(savedData);
+    }
+    setIsLoading(false);
+  }, []);
+
   const uploadCSV = async (file: File) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      toast.info('Processing CSV file...');
-      
       const parsedData = await parseCSV(file);
-      setRawData(parsedData);
-      
-      const processed = processData(parsedData);
-      setProcessedData(processed);
-      
-      toast.success('CSV file processed successfully!');
-      
-      // Set first district as default if available
-      if (processed.districts.length > 0) {
-        setSelectedDistrict(processed.districts[0]);
+      if (parsedData && parsedData.length > 0) {
+        const processed = processData(parsedData);
+        setProcessedData(processed);
+        toast.success(`Successfully processed ${parsedData.length} records`);
+      } else {
+        toast.error('No data found in the uploaded file');
       }
     } catch (error) {
-      console.error('Error uploading CSV:', error);
-      toast.error('Error processing CSV file. Please check the format.');
+      console.error('Error processing CSV:', error);
+      toast.error('Failed to process the file');
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  // Export data to CSV
-  const exportData = (fileName?: string) => {
-    const link = document.createElement('a');
-    const csv = convertToCSV(rawData);
-    
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', fileName || 'exported-data.csv');
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast.success('Data exported successfully!');
-  };
-
-  // Helper function to convert data to CSV format
-  const convertToCSV = (data: FarmerData[]) => {
-    if (data.length === 0) return '';
-    
-    const headers = Object.keys(data[0]).join(',');
-    const rows = data.map(row => {
-      return Object.values(row)
-        .map(value => `"${value}"`) // Wrap in quotes to handle commas in values
-        .join(',');
-    }).join('\n');
-    
-    return headers + '\n' + rows;
-  };
-
-  // Filter data by district
   const filterByDistrict = (district: string) => {
     setSelectedDistrict(district);
   };
 
   return (
-    <DataContext.Provider
-      value={{
-        rawData,
-        processedData,
+    <DataContext.Provider 
+      value={{ 
+        processedData, 
+        isLoading, 
+        uploadCSV, 
         loading,
         selectedDistrict,
-        uploadCSV,
-        exportData,
-        filterByDistrict,
+        filterByDistrict
       }}
     >
       {children}
@@ -109,7 +70,6 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Custom hook to use the data context
 export const useData = () => {
   const context = useContext(DataContext);
   if (context === undefined) {

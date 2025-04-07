@@ -8,45 +8,48 @@ import {
   BarChart3,
   UploadCloud,
   PieChart,
-  Home,
   Menu,
-  X
+  X,
+  LogIn,
+  ExternalLink
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface SidebarProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  onUploadClick: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, onUploadClick }) => {
   const location = useLocation();
   const isMobile = useIsMobile();
   
   const routes = [
     {
-      label: 'Home',
-      icon: Home,
-      href: '/',
-      active: location.pathname === '/',
-    },
-    {
-      label: 'Dashboard',
+      label: 'Block Wise Data',
       icon: BarChart3,
-      href: '/dashboard',
-      active: location.pathname === '/dashboard',
-    },
-    {
-      label: 'Upload CSV',
-      icon: UploadCloud,
-      href: '/upload',
-      active: location.pathname === '/upload',
+      href: '/',
+      active: location.pathname === '/' || location.pathname === '/dashboard',
     },
     {
       label: 'Finance',
       icon: PieChart,
       href: '/finance',
       active: location.pathname === '/finance',
+    },
+  ];
+
+  const externalLinks = [
+    {
+      label: 'PIAL',
+      icon: ExternalLink,
+      href: 'http://portal.microirrigation.site',
+    },
+    {
+      label: 'Admin Login',
+      icon: LogIn,
+      href: 'http://portal.microirrigation.site/admin',
     },
   ];
 
@@ -59,10 +62,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     >
       <div className="flex h-14 items-center justify-between border-b px-4 py-2">
         <Link to="/" className="flex items-center space-x-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-scheme-pmksy text-white">
-            <BarChart3 className="h-4 w-4" />
+          <div className="flex h-8 w-8 items-center justify-center">
+            {/* Logo placeholder - replace with actual logo */}
+            <img src="/logo.png" alt="PMKSY-BKSY Logo" className="h-full" />
           </div>
-          <span className="text-lg font-semibold">Scheme Insights</span>
+          <span className="text-lg font-semibold">PMKSY-BKSY</span>
         </Link>
         {isMobile && (
           <Button
@@ -77,6 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       </div>
       <ScrollArea className="flex-1 px-3 py-4">
         <nav className="space-y-1">
+          {/* Main Navigation Links */}
           {routes.map((route) => (
             <Link
               key={route.href}
@@ -93,6 +98,38 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
               )} />
               {route.label}
             </Link>
+          ))}
+          
+          {/* Upload Button - Triggers Login Modal */}
+          <button
+            onClick={() => {
+              onUploadClick();
+              isMobile && setIsOpen(false);
+            }}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-scheme-light",
+              location.pathname === "/upload" ? "bg-scheme-light text-scheme-pmksy" : "text-gray-700"
+            )}
+          >
+            <UploadCloud className={cn(
+              "h-4 w-4",
+              location.pathname === "/upload" ? "text-scheme-pmksy" : "text-gray-400"
+            )} />
+            Upload
+          </button>
+          
+          {/* External Links */}
+          {externalLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-scheme-light text-gray-700"
+            >
+              <link.icon className="h-4 w-4 text-gray-400" />
+              {link.label}
+            </a>
           ))}
         </nav>
       </ScrollArea>
