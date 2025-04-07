@@ -130,7 +130,12 @@ const BlockCard: React.FC<BlockCardProps> = ({ blockData, onClick }) => {
             <span className="text-xs text-gray-500">Completion Rate</span>
             <span className="text-xs font-semibold">{completionRate}%</span>
           </div>
-          <Progress value={parseFloat(completionRate)} className="h-2" />
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-scheme-pmksy h-2 rounded-full" 
+              style={{ width: `${parseFloat(completionRate)}%` }}
+            ></div>
+          </div>
         </div>
       </CardFooter>
     </Card>
