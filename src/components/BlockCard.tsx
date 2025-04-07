@@ -33,7 +33,8 @@ const BlockCard: React.FC<BlockCardProps> = ({ blockData, onClick }) => {
   
   // Calculate completion rate based on the progression through stages
   const completionRate = registrationStages.total > 0
-    ? (((registrationStages.jointInspection * 0.25) + 
+    ? (((registrationStages.newRegistration * 0) + 
+        (registrationStages.jointInspection * 0.25) + 
         (registrationStages.workOrder * 0.5) + 
         (registrationStages.install * 0.75) + 
         (registrationStages.installAndInspection)) / 

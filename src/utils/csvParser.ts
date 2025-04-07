@@ -114,8 +114,8 @@ export const processData = (farmers: FarmerData[]): ProcessedData => {
             sgst: 0,
             tds: 0,
           },
-          gstDue: 0,
           gstSubmitted: 0,
+          invoicesDue: 0,
         },
         farmers: [],
       };
@@ -132,15 +132,21 @@ export const processData = (farmers: FarmerData[]): ProcessedData => {
       const stage = determineRegistrationStage(farmer);
       blocks[blockName].registrationStages[stage] += 1;
       
-      // Process GST data - collect all GST amounts, regardless of Tax Invoice status
+      // Process GST data - collect all GST amounts
       if (["workOrder", "install", "installAndInspection"].includes(stage)) {
         const gstAmount = parseFloat(farmer["GST Amount"] || "0");
         const gstAdditional = parseFloat(farmer["GST Amount (Addl. Item)"] || "0");
         const totalGST = gstAmount + gstAdditional;
         
-        // All GST amounts are now considered "submitted"
+        // All GST amounts are considered "submitted" for the dashboard
         blocks[blockName].financialData.gstSubmitted += totalGST;
         gstSubmittedTotal += totalGST;
+        
+        // Track invoices due (no tax invoice number)
+        const hasTaxInvoice = farmer["Tax Inv. No."] && farmer["Tax Inv. No."].trim() !== "";
+        if (!hasTaxInvoice) {
+          blocks[blockName].financialData.invoicesDue += 1;
+        }
       }
       
       // Process financial data

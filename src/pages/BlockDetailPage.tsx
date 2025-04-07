@@ -45,27 +45,56 @@ const BlockDetailPage: React.FC = () => {
       .sort((a, b) => b.value - a.value);
   }, [blockData]);
   
-  // Calculate GST statistics
-  const gstStats = useMemo(() => {
-    if (!blockData) return { gstDue: 0, gstSubmitted: 0 };
+  // Calculate GST and Invoice Due statistics
+  const financialStats = useMemo(() => {
+    if (!blockData) return { gstSubmitted: 0, invoicesDue: 0, irrigationTypeDue: [] };
     
-    let gstDue = 0;
     let gstSubmitted = 0;
+    let invoicesDue = 0;
+    const irrigationTypeDueMap = new Map<string, number>();
     
-    blockData.farmers.forEach(farmer => {
-      const hasTaxInvoice = farmer["Tax Inv. No"] && farmer["Tax Inv. No"].trim() !== "";
+    // We're only interested in farmers at work order stage or beyond
+    const eligibleFarmers = blockData.farmers.filter(farmer => 
+      ["work order", "install", "install & inspection"].some(stage => 
+        farmer["Current Status"]?.toLowerCase()?.includes(stage)
+      )
+    );
+    
+    eligibleFarmers.forEach(farmer => {
+      const hasTaxInvoice = farmer["Tax Inv. No."] && farmer["Tax Inv. No."].trim() !== "";
       const gstAmount = 
         (parseFloat(farmer["GST Amount"] || "0") || 0) + 
         (parseFloat(farmer["GST Amount (Addl. Item)"] || "0") || 0);
       
-      if (hasTaxInvoice) {
-        gstSubmitted += gstAmount;
-      } else {
-        gstDue += gstAmount;
+      // All GST is considered "submitted" for our dashboard
+      gstSubmitted += gstAmount;
+      
+      // Track invoices due (no tax invoice number)
+      if (!hasTaxInvoice) {
+        invoicesDue++;
+        
+        // Extract irrigation type and count for invoice due
+        const irrigationType = farmer["Irrigation Type"] || "Unknown";
+        
+        // Try to extract numbers and type
+        let extractedType = irrigationType;
+        const matches = irrigationType.match(/([a-zA-Z\s]+)([0-9]+)/);
+        if (matches && matches.length > 1) {
+          extractedType = matches[1].trim();
+        }
+        
+        irrigationTypeDueMap.set(
+          extractedType, 
+          (irrigationTypeDueMap.get(extractedType) || 0) + 1
+        );
       }
     });
     
-    return { gstDue, gstSubmitted };
+    const irrigationTypeDue = Array.from(irrigationTypeDueMap)
+      .map(([type, count]) => ({ type, count }))
+      .sort((a, b) => b.count - a.count);
+    
+    return { gstSubmitted, invoicesDue, irrigationTypeDue };
   }, [blockData]);
   
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
@@ -101,27 +130,42 @@ const BlockDetailPage: React.FC = () => {
         </div>
       </div>
       
-      {/* GST Statistics */}
+      {/* Financial Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="bg-yellow-50 pb-2">
-            <CardTitle className="text-lg">GST Status</CardTitle>
+            <CardTitle className="text-lg">Financial Status</CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-red-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">GST Due</p>
-                <p className="text-xl font-bold text-red-600">
-                  ₹{gstStats.gstDue.toLocaleString('en-IN')}
-                </p>
-              </div>
               <div className="bg-green-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600">GST Submitted</p>
                 <p className="text-xl font-bold text-green-600">
-                  ₹{gstStats.gstSubmitted.toLocaleString('en-IN')}
+                  ₹{financialStats.gstSubmitted.toLocaleString('en-IN')}
+                </p>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600">Invoices Due</p>
+                <p className="text-xl font-bold text-blue-600">
+                  {financialStats.invoicesDue}
                 </p>
               </div>
             </div>
+            
+            {/* Invoice Due by Irrigation Type */}
+            {financialStats.irrigationTypeDue.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-sm font-medium mb-2">Invoice Due by Irrigation Type</h3>
+                <div className="space-y-1.5">
+                  {financialStats.irrigationTypeDue.map((item, index) => (
+                    <div key={index} className="flex justify-between text-xs">
+                      <span>{item.type}</span>
+                      <span className="font-medium">{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
         

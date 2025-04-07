@@ -106,8 +106,8 @@ export interface BlockData {
       sgst: number;
       tds: number;
     };
-    gstDue: number;
     gstSubmitted: number;
+    invoicesDue: number;
   };
   farmers: FarmerData[];
 }
