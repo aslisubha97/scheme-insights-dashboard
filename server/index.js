@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -102,9 +101,11 @@ function parseFile(filePath, fileType) {
           header: true,
           skipEmptyLines: true,
           complete: (results) => {
+            console.log(`Server parsed CSV with ${results.data.length} records`);
             resolve(results.data);
           },
           error: (error) => {
+            console.error("CSV parsing error:", error);
             reject(error);
           }
         });
@@ -115,8 +116,10 @@ function parseFile(filePath, fileType) {
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const data = xlsx.utils.sheet_to_json(worksheet);
+        console.log(`Server parsed XLSX with ${data.length} records`);
         resolve(data);
       } catch (error) {
+        console.error("XLSX parsing error:", error);
         reject(error);
       }
     } else {
@@ -198,12 +201,16 @@ app.post('/api/upload', authenticateToken, upload.single('file'), async (req, re
     const fileExtension = path.extname(req.file.originalname).toLowerCase();
     const fileType = fileExtension === '.csv' ? 'csv' : 'xlsx';
     
+    console.log(`Processing uploaded file: ${req.file.originalname}, type: ${fileType}`);
+    
     // Parse the file
     const farmers = await parseFile(filePath, fileType);
     
     if (!farmers || farmers.length === 0) {
       return res.status(400).json({ error: 'The file contains no data' });
     }
+    
+    console.log(`Successfully parsed ${farmers.length} records from ${fileType} file`);
     
     // Validate each farmer
     const validationErrors = [];
