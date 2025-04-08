@@ -1,4 +1,3 @@
-
 import { FarmerData, ProcessedData, BlockData } from "../types";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
@@ -194,9 +193,35 @@ export const processData = (farmers: FarmerData[]): ProcessedData => {
   };
 };
 
-// Export data to CSV
-export const exportToCSV = (data: FarmerData[], fileName: string = 'export.csv') => {
-  const csv = Papa.unparse(data);
+// Field definition for CSV export
+interface CSVField {
+  header: string;
+  key: keyof FarmerData;
+}
+
+// Export data to CSV with optional field selection
+export const exportToCSV = (
+  data: FarmerData[], 
+  fileName: string = 'export.csv',
+  fields?: CSVField[]
+) => {
+  let csvData: any[];
+  
+  if (fields) {
+    // Use the specified fields only
+    csvData = data.map(item => {
+      const row: Record<string, any> = {};
+      fields.forEach(field => {
+        row[field.header] = item[field.key];
+      });
+      return row;
+    });
+  } else {
+    // Use all fields
+    csvData = data;
+  }
+  
+  const csv = Papa.unparse(csvData);
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   

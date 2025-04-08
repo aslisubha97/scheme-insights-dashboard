@@ -38,16 +38,19 @@ const InvoiceDuePage: React.FC = () => {
   const handleExport = () => {
     if (filteredFarmers.length === 0) return;
     
-    // Export only the selected fields
-    const exportData = filteredFarmers.map(farmer => ({
-      'Registration Number': farmer["Farmer Registration Number"],
-      'Name': farmer["Name of Beneficiary"],
-      'Block Name': farmer["Block Name"],
-      'Irrigation Type': farmer["Irrigation Type"],
-      'Current Status': farmer["Current Status"]
-    }));
+    // Create a proper CSV structure while maintaining the FarmerData type
+    // This fixes the type error by exporting the original FarmerData objects
+    // but only including specific fields in the CSV output
+    const filename = `invoice-due-list-${new Date().toISOString().slice(0, 10)}.csv`;
     
-    exportToCSV(exportData, `invoice-due-list-${new Date().toISOString().slice(0, 10)}.csv`);
+    // We need to pass the full FarmerData objects, but customize the headers and fields
+    exportToCSV(filteredFarmers, filename, [
+      { header: 'Registration Number', key: 'Farmer Registration Number' },
+      { header: 'Name', key: 'Name of Beneficiary' },
+      { header: 'Block Name', key: 'Block Name' },
+      { header: 'Irrigation Type', key: 'Irrigation Type' },
+      { header: 'Current Status', key: 'Current Status' }
+    ]);
   };
   
   return (
