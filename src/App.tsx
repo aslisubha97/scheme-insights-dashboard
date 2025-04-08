@@ -15,7 +15,21 @@ import InvoiceDuePage from "./pages/InvoiceDuePage";
 import { AuthProvider } from "./context/AuthContext";
 
 // Create a new query client instance
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+// Optional: Set global API URL
+if (!import.meta.env.VITE_API_URL) {
+  // Default to current origin if not specified
+  window.VITE_API_URL = window.location.origin;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
