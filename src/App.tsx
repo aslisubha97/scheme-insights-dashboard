@@ -27,8 +27,8 @@ const queryClient = new QueryClient({
 
 // Optional: Set global API URL
 if (!import.meta.env.VITE_API_URL) {
-  // Default to current origin if not specified
-  window.VITE_API_URL = window.location.origin;
+  // Define API_URL as a property on window instead of VITE_API_URL
+  window.API_URL = window.location.origin;
 }
 
 const App = () => (

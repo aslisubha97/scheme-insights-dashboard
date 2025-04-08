@@ -17,7 +17,7 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 // Define the API URL based on environment
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+const API_BASE_URL = import.meta.env.VITE_API_URL || window.API_URL || '';
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [processedData, setProcessedData] = useState<ProcessedData | null>(null);
