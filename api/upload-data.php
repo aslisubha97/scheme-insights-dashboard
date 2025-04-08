@@ -64,42 +64,10 @@ try {
         }
         fclose($handle);
     } else {
-        // Process XLSX file using PhpSpreadsheet library
-        // If PhpSpreadsheet is not available, return an appropriate message
-        if (!class_exists('PhpOffice\PhpSpreadsheet\IOFactory')) {
-            echo json_encode(['error' => 'XLSX processing requires PhpSpreadsheet library which is not installed']);
-            exit;
-        }
-        
-        require 'vendor/autoload.php';
-        
-        try {
-            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file_tmp);
-            $worksheet = $spreadsheet->getActiveSheet();
-            $rows = $worksheet->toArray();
-            
-            // First row contains headers
-            $headers = $rows[0];
-            
-            // Prepare the SQL statement
-            $placeholders = implode(',', array_fill(0, count($headers), '?'));
-            $columns = implode(',', array_map(function($header) {
-                return str_replace(' ', '_', strtolower($header));
-            }, $headers));
-            
-            $stmt = $conn->prepare("INSERT INTO farmers ($columns) VALUES ($placeholders)");
-            
-            // Skip the header row and process data rows
-            $rowCount = 0;
-            for ($i = 1; $i < count($rows); $i++) {
-                $stmt->execute($rows[$i]);
-                $rowCount++;
-            }
-        } catch (Exception $e) {
-            echo json_encode(['error' => 'Error processing XLSX file: ' . $e->getMessage()]);
-            $conn->rollBack();
-            exit;
-        }
+        // Process XLSX file (would need a library like PhpSpreadsheet)
+        // This is a placeholder - you would need to implement XLSX processing
+        echo json_encode(['error' => 'XLSX processing not implemented in this demo']);
+        exit;
     }
     
     // Commit transaction

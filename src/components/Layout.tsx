@@ -53,12 +53,8 @@ const Layout: React.FC = () => {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <div className="flex items-center justify-center">
-              <img 
-                src="/lovable-uploads/3534f8ca-7ae3-4b51-957f-99962bc3b575.png" 
-                alt="PMKSY-BKSY Logo" 
-                className="h-8 object-contain"
-              />
+            <div className="flex items-center space-x-2">
+              <span className="text-lg font-semibold">PMKSY-BKSY</span>
             </div>
             <div className="w-8" /> {/* Empty space for alignment */}
           </div>

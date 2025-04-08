@@ -11,7 +11,6 @@ import Upload from "./pages/Upload";
 import FinancePage from "./pages/FinancePage";
 import NotFound from "./pages/NotFound";
 import BlockDetailPage from "./pages/BlockDetailPage";
-import InvoiceDuePage from "./pages/InvoiceDuePage";
 import { AuthProvider } from "./context/AuthContext";
 
 // Create a new query client instance
@@ -32,7 +31,6 @@ const App = () => (
                 <Route path="/upload" element={<Upload />} />
                 <Route path="/finance" element={<FinancePage />} />
                 <Route path="/block/:blockName" element={<BlockDetailPage />} />
-                <Route path="/invoice-due" element={<InvoiceDuePage />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
             </Routes>

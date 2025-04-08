@@ -1,3 +1,4 @@
+
 import { FarmerData, ProcessedData, BlockData } from "../types";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
@@ -6,46 +7,32 @@ import { toast } from "sonner";
 // Parse CSV file data
 export const parseCSV = (file: File): Promise<FarmerData[]> => {
   return new Promise((resolve, reject) => {
-    if (file.name.endsWith('.xlsx') || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+    if (file.name.endsWith('.xlsx')) {
       // Handle XLSX files
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
           const data = e.target?.result;
-          if (!data) {
-            reject(new Error("Failed to read file data"));
-            return;
-          }
-          
-          const workbook = XLSX.read(data, { type: 'array' });
+          const workbook = XLSX.read(data, { type: 'binary' });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet);
-          
-          // Log success for debugging
-          console.log(`Successfully parsed XLSX file with ${jsonData.length} records`);
           resolve(jsonData as FarmerData[]);
         } catch (error) {
-          console.error("XLSX parsing error:", error);
           reject(error);
         }
       };
-      reader.onerror = (error) => {
-        console.error("FileReader error:", error);
-        reject(error);
-      };
-      reader.readAsArrayBuffer(file);
+      reader.onerror = (error) => reject(error);
+      reader.readAsBinaryString(file);
     } else {
       // Handle CSV files
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
-          console.log(`Successfully parsed CSV file with ${results.data.length} records`);
           resolve(results.data as FarmerData[]);
         },
         error: (error) => {
-          console.error("CSV parsing error:", error);
           reject(error);
         },
       });
@@ -207,35 +194,9 @@ export const processData = (farmers: FarmerData[]): ProcessedData => {
   };
 };
 
-// Field definition for CSV export
-interface CSVField {
-  header: string;
-  key: keyof FarmerData;
-}
-
-// Export data to CSV with optional field selection
-export const exportToCSV = (
-  data: FarmerData[], 
-  fileName: string = 'export.csv',
-  fields?: CSVField[]
-) => {
-  let csvData: any[];
-  
-  if (fields) {
-    // Use the specified fields only
-    csvData = data.map(item => {
-      const row: Record<string, any> = {};
-      fields.forEach(field => {
-        row[field.header] = item[field.key];
-      });
-      return row;
-    });
-  } else {
-    // Use all fields
-    csvData = data;
-  }
-  
-  const csv = Papa.unparse(csvData);
+// Export data to CSV
+export const exportToCSV = (data: FarmerData[], fileName: string = 'export.csv') => {
+  const csv = Papa.unparse(data);
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   

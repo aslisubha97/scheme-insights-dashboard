@@ -36,11 +36,9 @@ const CsvUpload: React.FC = () => {
         fileType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
         fileExt === 'xlsx'
       ) {
-        console.log(`File selected: ${selectedFile.name}, type: ${fileType}, extension: ${fileExt}`);
         setFile(selectedFile);
         toast.info(`File "${selectedFile.name}" selected`);
       } else {
-        console.log(`Invalid file type: ${fileType}, extension: ${fileExt}`);
         toast.error('Please upload a valid CSV or XLSX file');
       }
     }
@@ -51,7 +49,6 @@ const CsvUpload: React.FC = () => {
     accept: {
       'text/csv': ['.csv'],
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/vnd.ms-excel': ['.xls'],
     },
     multiple: false,
   });
@@ -63,9 +60,7 @@ const CsvUpload: React.FC = () => {
     }
 
     try {
-      console.log(`Uploading file: ${file.name}, type: ${file.type}`);
       await uploadCSV(file);
-      navigate('/'); // Redirect to home page after successful upload
     } catch (error) {
       console.error('Error uploading file:', error);
       toast.error('Failed to upload file. Please try again.');
