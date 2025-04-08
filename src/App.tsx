@@ -33,11 +33,11 @@ if (!import.meta.env.VITE_API_URL) {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <DataProvider>
-        <AuthProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <DataProvider>
           <BrowserRouter>
             <Routes>
               <Route element={<Layout />}>
@@ -51,9 +51,9 @@ const App = () => (
               </Route>
             </Routes>
           </BrowserRouter>
-        </AuthProvider>
-      </DataProvider>
-    </TooltipProvider>
+        </DataProvider>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
