@@ -25,10 +25,10 @@ const queryClient = new QueryClient({
   },
 });
 
-// Optional: Set global API URL
+// Set global API URL if not defined in environment
 if (!import.meta.env.VITE_API_URL) {
-  // Define API_URL as a property on window instead of VITE_API_URL
   window.API_URL = window.location.origin;
+  console.log(`Setting default API_URL to ${window.API_URL}`);
 }
 
 const App = () => (

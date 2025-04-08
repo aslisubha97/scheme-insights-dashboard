@@ -34,13 +34,16 @@ const CsvUpload: React.FC = () => {
       
       console.log(`File selected: ${selectedFile.name}, type: ${fileType}, extension: ${fileExt}`);
       
+      // More permissive file type checking
       if (
         fileType === 'text/csv' || 
         fileExt === 'csv' || 
         fileType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
         fileType === 'application/vnd.ms-excel' ||
         fileExt === 'xlsx' ||
-        fileExt === 'xls'
+        fileExt === 'xls' ||
+        // Accept octet-stream as Excel sometimes gets this MIME type
+        fileType === 'application/octet-stream' && (fileExt === 'xlsx' || fileExt === 'xls')
       ) {
         setFile(selectedFile);
         toast.info(`File "${selectedFile.name}" selected`);
@@ -57,8 +60,11 @@ const CsvUpload: React.FC = () => {
       'text/csv': ['.csv'],
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
       'application/vnd.ms-excel': ['.xls'],
+      // Add octet-stream for Excel files
+      'application/octet-stream': ['.xlsx', '.xls'],
     },
     multiple: false,
+    maxSize: 10485760, // 10MB
   });
 
   const handleUpload = async () => {
@@ -85,11 +91,12 @@ const CsvUpload: React.FC = () => {
       
       // Short delay before redirecting to show 100% completion
       setTimeout(() => {
+        toast.success('File processed successfully!');
         navigate('/'); // Redirect to home page after successful upload
       }, 500);
     } catch (error) {
       console.error('Error uploading file:', error);
-      toast.error('Failed to upload file. Please try again.');
+      toast.error(error instanceof Error ? error.message : 'Failed to upload file. Please try again.');
       setUploadProgress(0);
     }
   };

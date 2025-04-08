@@ -2,7 +2,8 @@
 import React from 'react';
 import CsvUpload from '@/components/CsvUpload';
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Info } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 const Upload: React.FC = () => {
   return (
@@ -22,6 +23,26 @@ const Upload: React.FC = () => {
                   <li>Maximum file size: 10MB</li>
                   <li>If upload fails, check your internet connection or try a smaller file</li>
                 </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-blue-50 border-blue-200 mb-4">
+          <CardContent className="p-4">
+            <div className="flex items-start">
+              <Info className="text-blue-500 h-5 w-5 mt-0.5 mr-2" />
+              <div>
+                <h3 className="font-medium text-blue-800">Expected File Format</h3>
+                <p className="text-sm text-blue-700 mt-1 mb-2">
+                  Your file should contain these column headers (exact matching is required):
+                </p>
+                <div className="bg-white rounded p-2 overflow-x-auto text-xs text-blue-800">
+                  <code>
+                    Farmer Registration Number, Name of Beneficiary, Beneficiary Type, Farmer Category, Sex, Farmer Status, 
+                    Epic Number, Aadhar Number, Enrollment Number, District Name, Block Name, Gram Panchayet, Mouza Name...
+                  </code>
+                </div>
               </div>
             </div>
           </CardContent>

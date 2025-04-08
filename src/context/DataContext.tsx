@@ -128,7 +128,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Fallback to client-side processing if not authenticated or API call fails
       console.log("Falling back to client-side processing");
       const parsedData = await parseCSV(file);
+      
+      if (!parsedData) {
+        throw new Error("Failed to parse file data");
+      }
+      
+      console.log(`Parsed data has ${parsedData.length} records`);
+      
       if (parsedData && parsedData.length > 0) {
+        // Log a sample record to verify structure
+        console.log("Sample record:", JSON.stringify(parsedData[0]).substring(0, 200) + "...");
+        
         const processed = processData(parsedData);
         setProcessedData(processed);
         // Store processed data in localStorage
@@ -136,6 +146,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         toast.success(`Successfully processed ${parsedData.length} records locally`);
       } else {
         toast.error('No data found in the uploaded file');
+        throw new Error('No data found in the uploaded file');
       }
     } catch (error) {
       console.error('Error processing file:', error);
