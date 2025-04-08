@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import { useData } from '@/context/DataContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,15 +10,12 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
 import { Button } from '@/components/ui/button';
-import { Download, TrendingUp, PieChart as PieChartIcon, BarChart3, Search, FileCheck } from 'lucide-react';
+import { Download, TrendingUp, PieChart as PieChartIcon, BarChart3, Search } from 'lucide-react';
 import { exportToCSV } from '@/utils/csvParser';
 import { FarmerData } from '@/types';
-import { useAuth } from '@/context/AuthContext';
-import { Link } from 'react-router-dom';
 
 const FinanceReport: React.FC = () => {
   const { processedData, selectedDistrict, filterByDistrict } = useData();
-  const { isAdmin } = useAuth();
   const [selectedBlock, setSelectedBlock] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchCategory, setSearchCategory] = useState<string>('billno');
@@ -43,8 +41,8 @@ const FinanceReport: React.FC = () => {
     if (selectedBlock === 'all') {
       // Aggregate data for all blocks
       const aggregatedData = {
-        pmksy: { totalPaid: 0, cgst: 0, sgst: 0, tds: 0, commission: 0 },
-        bksy: { totalPaid: 0, cgst: 0, sgst: 0, tds: 0, commission: 0 }
+        pmksy: { totalPaid: 0, cgst: 0, sgst: 0, tds: 0 },
+        bksy: { totalPaid: 0, cgst: 0, sgst: 0, tds: 0 }
       };
       
       blocks.forEach(block => {
@@ -59,32 +57,13 @@ const FinanceReport: React.FC = () => {
         aggregatedData.bksy.tds += block.financialData.bksy.tds;
       });
       
-      // Calculate commission (22% of the sum of total paid amounts, excluding GST and TDS)
-      aggregatedData.pmksy.commission = aggregatedData.pmksy.totalPaid * 0.22;
-      aggregatedData.bksy.commission = aggregatedData.bksy.totalPaid * 0.22;
-      
       return aggregatedData;
     } else {
       // Return data for selected block
       const selectedBlockData = blocks.find(block => block.blockName === selectedBlock);
-      if (selectedBlockData) {
-        const blockData = { ...selectedBlockData.financialData };
-        
-        // Add commission calculation
-        blockData.pmksy.commission = blockData.pmksy.totalPaid * 0.22;
-        blockData.bksy.commission = blockData.bksy.totalPaid * 0.22;
-        
-        return blockData;
-      }
-      return null;
+      return selectedBlockData ? selectedBlockData.financialData : null;
     }
   }, [processedData, selectedBlock, blocks]);
-  
-  // Calculate total commission
-  const totalCommission = useMemo(() => {
-    if (!financialData) return 0;
-    return financialData.pmksy.commission + financialData.bksy.commission;
-  }, [financialData]);
   
   // Chart data
   const barChartData = useMemo(() => {
@@ -115,16 +94,6 @@ const FinanceReport: React.FC = () => {
       { name: 'CGST', value: financialData.bksy.cgst, color: '#14b8a6' },
       { name: 'SGST', value: financialData.bksy.sgst, color: '#5eead4' },
       { name: 'TDS', value: financialData.bksy.tds, color: '#99f6e4' },
-    ].filter(item => item.value > 0);
-  }, [financialData]);
-  
-  // Commission pie chart data
-  const commissionPieChartData = useMemo(() => {
-    if (!financialData) return [];
-    
-    return [
-      { name: 'PMKSY Commission', value: financialData.pmksy.commission, color: '#8B5CF6' },
-      { name: 'BKSY Commission', value: financialData.bksy.commission, color: '#D946EF' },
     ].filter(item => item.value > 0);
   }, [financialData]);
 
@@ -182,15 +151,6 @@ const FinanceReport: React.FC = () => {
       maximumFractionDigits: 0
     }).format(amount);
   };
-
-  // Calculate invoices due
-  const invoicesDue = useMemo(() => {
-    if (!processedData) return 0;
-    
-    return Object.values(processedData.blocks).reduce(
-      (total, block) => total + block.financialData.invoicesDue, 0
-    );
-  }, [processedData]);
   
   return (
     <div className="space-y-6">
@@ -243,28 +203,6 @@ const FinanceReport: React.FC = () => {
           </Button>
         </div>
       </div>
-
-      {/* Invoice Due Card with Link */}
-      {processedData && (
-        <Link to="/invoice-due" className="block hover:no-underline">
-          <Card className="border-amber-200 hover:border-amber-300 transition-colors">
-            <CardHeader className="pb-2 bg-amber-50">
-              <CardTitle className="text-base flex items-center text-amber-700">
-                <FileCheck className="mr-2 h-5 w-5" />
-                Invoice Due
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-amber-600">
-                {invoicesDue}
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Total invoices pending across all blocks
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-      )}
       
       {/* Enhanced Search */}
       <Card>
@@ -466,31 +404,16 @@ const FinanceReport: React.FC = () => {
               </CardContent>
             </Card>
             
-            {isAdmin() && (
-              <Card className="bg-purple-50 border-purple-200">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-purple-700">Total Commission (22%)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-purple-700">
-                    {formatCurrency(totalCommission)}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            
-            {!isAdmin() && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Total TDS</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {formatCurrency(financialData.pmksy.tds + financialData.bksy.tds)}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Total TDS</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {formatCurrency(financialData.pmksy.tds + financialData.bksy.tds)}
+                </div>
+              </CardContent>
+            </Card>
           </div>
           
           {/* Charts */}
@@ -527,12 +450,9 @@ const FinanceReport: React.FC = () => {
             </Card>
             
             <Tabs defaultValue="pmksy">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-3">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="pmksy" className="data-[state=active]:bg-scheme-pmksy/10">PMKSY Details</TabsTrigger>
                 <TabsTrigger value="bksy" className="data-[state=active]:bg-scheme-bksy/10">BKSY Details</TabsTrigger>
-                {isAdmin() && (
-                  <TabsTrigger value="commission" className="data-[state=active]:bg-purple-100">Commission</TabsTrigger>
-                )}
               </TabsList>
               
               <TabsContent value="pmksy">
@@ -642,58 +562,6 @@ const FinanceReport: React.FC = () => {
                   </CardContent>
                 </Card>
               </TabsContent>
-              
-              {isAdmin() && (
-                <TabsContent value="commission">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center text-lg text-purple-700">
-                        <PieChartIcon className="mr-2 h-5 w-5" />
-                        Commission Distribution (22%)
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={commissionPieChartData}
-                              cx="50%"
-                              cy="50%"
-                              outerRadius={80}
-                              innerRadius={60}
-                              dataKey="value"
-                              labelLine={false}
-                              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            >
-                              {commissionPieChartData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                              ))}
-                            </Pie>
-                            <Tooltip formatter={(value) => [formatCurrency(Number(value)), '']} />
-                            <Legend />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                      
-                      <div className="mt-4 space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm">PMKSY Commission (22%):</span>
-                          <span className="font-medium">{formatCurrency(financialData.pmksy.commission)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm">BKSY Commission (22%):</span>
-                          <span className="font-medium">{formatCurrency(financialData.bksy.commission)}</span>
-                        </div>
-                        <div className="flex justify-between font-bold">
-                          <span className="text-sm">Total Commission:</span>
-                          <span>{formatCurrency(totalCommission)}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              )}
             </Tabs>
           </div>
         </>

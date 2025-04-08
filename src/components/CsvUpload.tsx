@@ -4,18 +4,16 @@ import { useDropzone } from 'react-dropzone';
 import { useData } from '../context/DataContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, FileX2, FileCheck2, Loader2 } from 'lucide-react';
+import { Upload, FileX2, FileCheck2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Progress } from '@/components/ui/progress';
 
 const CsvUpload: React.FC = () => {
   const { uploadCSV, loading } = useData();
   const [file, setFile] = useState<File | null>(null);
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Redirect non-authenticated users
   React.useEffect(() => {
@@ -32,23 +30,15 @@ const CsvUpload: React.FC = () => {
       const fileType = selectedFile.type;
       const fileExt = selectedFile.name.split('.').pop()?.toLowerCase();
       
-      console.log(`File selected: ${selectedFile.name}, type: ${fileType}, extension: ${fileExt}`);
-      
-      // More permissive file type checking
       if (
         fileType === 'text/csv' || 
         fileExt === 'csv' || 
         fileType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
-        fileType === 'application/vnd.ms-excel' ||
-        fileExt === 'xlsx' ||
-        fileExt === 'xls' ||
-        // Accept octet-stream as Excel sometimes gets this MIME type
-        fileType === 'application/octet-stream' && (fileExt === 'xlsx' || fileExt === 'xls')
+        fileExt === 'xlsx'
       ) {
         setFile(selectedFile);
         toast.info(`File "${selectedFile.name}" selected`);
       } else {
-        console.log(`Invalid file type: ${fileType}, extension: ${fileExt}`);
         toast.error('Please upload a valid CSV or XLSX file');
       }
     }
@@ -59,12 +49,8 @@ const CsvUpload: React.FC = () => {
     accept: {
       'text/csv': ['.csv'],
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/vnd.ms-excel': ['.xls'],
-      // Add octet-stream for Excel files
-      'application/octet-stream': ['.xlsx', '.xls'],
     },
     multiple: false,
-    maxSize: 10485760, // 10MB
   });
 
   const handleUpload = async () => {
@@ -74,30 +60,10 @@ const CsvUpload: React.FC = () => {
     }
 
     try {
-      console.log(`Attempting to upload file: ${file.name}, type: ${file.type}`);
-      setUploadProgress(10);
-      
-      // Simulate incremental progress during upload
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          const newProgress = prev + 5;
-          return newProgress < 90 ? newProgress : prev;
-        });
-      }, 300);
-      
       await uploadCSV(file);
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-      
-      // Short delay before redirecting to show 100% completion
-      setTimeout(() => {
-        toast.success('File processed successfully!');
-        navigate('/'); // Redirect to home page after successful upload
-      }, 500);
     } catch (error) {
       console.error('Error uploading file:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to upload file. Please try again.');
-      setUploadProgress(0);
+      toast.error('Failed to upload file. Please try again.');
     }
   };
 
@@ -159,26 +125,12 @@ const CsvUpload: React.FC = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                setFile(null);
-                setUploadProgress(0);
-              }}
+              onClick={() => setFile(null)}
               className="text-red-500 hover:text-red-700"
-              disabled={loading}
             >
               <FileX2 className="h-4 w-4 mr-1" />
               Remove
             </Button>
-          </div>
-        )}
-        
-        {uploadProgress > 0 && (
-          <div className="mt-4">
-            <div className="flex justify-between text-sm mb-1">
-              <span>Upload progress</span>
-              <span>{uploadProgress}%</span>
-            </div>
-            <Progress value={uploadProgress} className="h-2" />
           </div>
         )}
       </CardContent>
@@ -188,14 +140,7 @@ const CsvUpload: React.FC = () => {
           disabled={!file || loading}
           className="bg-scheme-pmksy hover:bg-scheme-pmksy/90"
         >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            'Upload & Process File'
-          )}
+          {loading ? 'Processing...' : 'Upload & Process File'}
         </Button>
       </CardFooter>
     </Card>

@@ -99,14 +99,12 @@ export interface BlockData {
       cgst: number;
       sgst: number;
       tds: number;
-      commission?: number;
     };
     bksy: {
       totalPaid: number;
       cgst: number;
       sgst: number;
       tds: number;
-      commission?: number;
     };
     gstSubmitted: number;
     invoicesDue: number;
@@ -120,11 +118,4 @@ export interface ProcessedData {
   allFarmers: FarmerData[];
   districts: string[];
   gstSubmittedTotal?: number;
-}
-
-// User types for authentication
-export interface User {
-  username: string;
-  role: 'admin' | 'pmksy';
-  password?: string; // Only used in the backend, not stored in frontend
 }
