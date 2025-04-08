@@ -80,7 +80,7 @@ const BlockCard: React.FC<BlockCardProps> = ({ blockData, onClick }) => {
             </div>
           </div>
           
-          <div className="h-[140px]">
+          <div className="h-[140px] flex justify-center items-center">
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -130,12 +130,7 @@ const BlockCard: React.FC<BlockCardProps> = ({ blockData, onClick }) => {
             <span className="text-xs text-gray-500">Completion Rate</span>
             <span className="text-xs font-semibold">{completionRate}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-scheme-pmksy h-2 rounded-full" 
-              style={{ width: `${parseFloat(completionRate)}%` }}
-            ></div>
-          </div>
+          <Progress value={parseFloat(completionRate)} className="h-2" />
         </div>
       </CardFooter>
     </Card>
